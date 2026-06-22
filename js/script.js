@@ -1,3 +1,5 @@
+import {addData, deleteData, loadData} from "./stockage.js"
+
 let inscriptions = [];
 let filtreActuel = "Tous";
 let groupes = [];
@@ -23,36 +25,29 @@ function genererId() {
     return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function chargerDepuisStorage(key, valeurParDefaut = []) {
+async function chargerDepuisStorage(key, valeurParDefaut = []) {
     try {
-        const donnees = localStorage.getItem(key);
-        return donnees ? JSON.parse(donnees) : valeurParDefaut;
+        return await loadData(key);
     } catch (error) {
         console.error("Erreur lors du chargement du stockage local", error);
         return valeurParDefaut;
     }
 }
 
-function sauvegarderDansStorage(key, valeur) {
-    try {
-        localStorage.setItem(key, JSON.stringify(valeur));
-    } catch (error) {
-        console.error("Erreur lors de la sauvegarde du stockage local", error);
+await Promise.all(
+    [chargerDepuisStorage(STORAGE_KEYS.inscriptions, []),
+    chargerDepuisStorage(STORAGE_KEYS.groupes, [])]).then(
+    ([inscriptionsData, groupesData]) => {
+        inscriptions = inscriptionsData;
+        groupes = groupesData;
     }
-}
+);
 
-function sauvegarderDonnees() {
-    sauvegarderDansStorage(STORAGE_KEYS.inscriptions, inscriptions);
-    sauvegarderDansStorage(STORAGE_KEYS.groupes, groupes);
-}
-
-inscriptions = chargerDepuisStorage(STORAGE_KEYS.inscriptions, []);
-groupes = chargerDepuisStorage(STORAGE_KEYS.groupes, []);
 
 function ajouterInscription() {
     const nom = document.getElementById("nom").value.trim();
     const personnage = document.getElementById("personnage").value.trim();
-    const jours = document.querySelectorAll('.formulaire input[type="checkbox"]:checked');
+    const jours = Array.from(document.querySelectorAll('.formulaire input[type="checkbox"]:checked'));
 
     if (!nom || !personnage) {
         alert("Remplis tous les champs");
@@ -64,23 +59,28 @@ function ajouterInscription() {
         return;
     }
 
-    jours.forEach(jour => {
-        inscriptions.push({
+    Promise.all(jours.map(jour => {
+        return addData({
             id: genererId(),
             nom: nom,
             personnage: personnage,
             jour: jour.value
-        });
-    });
+        }, STORAGE_KEYS.inscriptions)
+    })).then(() => {
+        return loadData(STORAGE_KEYS.inscriptions)
+    }).then(
+        l => {
+            inscriptions = l;
+            document.getElementById("nom").value = "";
+            document.getElementById("personnage").value = "";
+            jours.forEach(j => j.checked = false);
 
-    sauvegarderDonnees();
-
-    document.getElementById("nom").value = "";
-    document.getElementById("personnage").value = "";
-    jours.forEach(j => j.checked = false);
-
-    afficherJour(filtreActuel);
+            afficherJour(filtreActuel);
+        }
+    );
 }
+
+window.ajouterInscription = ajouterInscription;
 
 function appliquerRecherche() {
     if (!tbody) return;
@@ -107,15 +107,13 @@ function appliquerRecherche() {
     tbody.innerHTML = "";
 
     resultat.forEach(inscription => {
-        const index = inscriptions.indexOf(inscription);
-
         tbody.innerHTML += `
             <tr>
                 <td>${inscription.nom}</td>
                 <td>${inscription.personnage}</td>
                 <td>${inscription.jour}</td>
                 <td>
-                    <button class="supprimer-btn" data-index="${index}" type="button">✖</button>
+                    <button class="supprimer-btn" data-index="${inscription.id}" type="button">✖</button>
                 </td>
             </tr>
         `;
@@ -128,6 +126,8 @@ function afficherJour(jourChoisi) {
     filtreActuel = jourChoisi;
     appliquerRecherche();
 }
+
+window.afficherJour = afficherJour;
 
 if (rechercheInput) {
     rechercheInput.addEventListener("input", () => {
@@ -161,16 +161,18 @@ if (boutonJours && joursGroupeCheckboxes) {
 }
 
 if (tbody) {
-    tbody.addEventListener("click", (event) => {
+    tbody.addEventListener("click", async (event) => {
         const bouton = event.target.closest(".supprimer-btn");
 
         if (!bouton) return;
 
-        const index = Number(bouton.dataset.index);
+        const index = bouton.dataset.index;
+        const inscription = inscriptions.find(i => i.id === index);
 
-        if (Number.isInteger(index) && index >= 0 && index < inscriptions.length) {
-            inscriptions.splice(index, 1);
-            sauvegarderDonnees();
+        if (inscription) {
+            // inscriptions.splice(index, 1);
+            await deleteData(inscription, STORAGE_KEYS.inscriptions);
+            inscriptions = await loadData(STORAGE_KEYS.inscriptions);
             appliquerRecherche();
         }
     });
@@ -186,13 +188,13 @@ function chargerParticipants() {
         const label = document.createElement("label");
         label.innerHTML = `
             <input type="checkbox" value="${inscription.id}">
-            ${inscription.nom} (${inscription.personnage})
+            ${inscription.nom} (${inscription.personnage} - ${inscription.jour})
         `;
         conteneur.appendChild(label);
     });
 }
 
-function creerGroupe() {
+async function creerGroupe() {
     const nom = document.getElementById("nomGroupe").value.trim();
     const checksParticipants = document.querySelectorAll("#participantsCheckboxes input:checked");
     const checksJours = document.querySelectorAll("#joursGroupeCheckboxes input:checked");
@@ -220,20 +222,24 @@ function creerGroupe() {
         return;
     }
 
-    groupes.push({
+    await addData({
+        id: genererId(),
         nom: nom,
         membres: membres,
         jours: joursChoisis
-    });
+    }, STORAGE_KEYS.groupes);
 
-    sauvegarderDonnees();
+    groupes = await loadData(STORAGE_KEYS.groupes);
 
     document.getElementById("nomGroupe").value = "";
     checksParticipants.forEach(checkbox => checkbox.checked = false);
     checksJours.forEach(checkbox => checkbox.checked = false);
 
     afficherGroupes();
+    afficherJour("Tous");
 }
+
+window.creerGroupe = creerGroupe;
 
 function afficherGroupes() {
     const zone = document.getElementById("listeGroupes");
@@ -246,7 +252,7 @@ function afficherGroupes() {
             <div class="carte-groupe">
                 <button
                     class="supprimer-groupe-btn"
-                    data-index="${index}"
+                    data-index="${groupe.id}"
                     type="button"
                     aria-label="Supprimer le groupe ${groupe.nom}"
                 >✖</button>
@@ -254,8 +260,8 @@ function afficherGroupes() {
                 <p><strong>Membres :</strong></p>
                 <ul>
                     ${groupe.membres.map(membre =>
-                        `<li>${membre.nom} (${membre.personnage})</li>`
-                    ).join("")}
+            `<li>${membre.nom} (${membre.personnage} - ${membre.jour})</li>`
+        ).join("")}
                 </ul>
                 <p><strong>Jours :</strong> ${groupe.jours.join(", ")}</p>
             </div>
@@ -266,22 +272,23 @@ function afficherGroupes() {
 const zoneGroupes = document.getElementById("listeGroupes");
 
 if (zoneGroupes) {
-    zoneGroupes.addEventListener("click", (event) => {
+    zoneGroupes.addEventListener("click", async (event) => {
         const bouton = event.target.closest(".supprimer-groupe-btn");
 
         if (!bouton) return;
 
-        const index = Number(bouton.dataset.index);
+        const index = bouton.dataset.index;
 
-        if (!Number.isInteger(index) || index < 0 || index >= groupes.length) return;
 
-        const groupe = groupes[index];
+        const groupe = groupes.find(g => g.id === index);
         const message = `Voulez-vous vraiment supprimer le groupe "${groupe.nom}" ?`;
 
         if (window.confirm(message)) {
-            groupes.splice(index, 1);
-            sauvegarderDonnees();
+            // groupes.splice(index, 1);
+            await deleteData(groupe, STORAGE_KEYS.groupes);
+            groupes = await loadData(STORAGE_KEYS.groupes);
             afficherGroupes();
+            afficherJour("Tous");
         }
     });
 }
