@@ -47,8 +47,7 @@ export async function deleteData(data, sheetName) {
         method: "POST",
         body: JSON.stringify(data)
     });
-
-    return  await loadData(sheetName);
+    hideLoader();
 }
 
 

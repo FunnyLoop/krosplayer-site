@@ -59,18 +59,17 @@ function ajouterInscription() {
         return;
     }
 
-    Promise.all(jours.map(jour => {
-        return addData({
-            id: genererId(),
-            nom: nom,
-            personnage: personnage,
-            jour: jour.value
-        }, STORAGE_KEYS.inscriptions)
-    })).then(() => {
-        return loadData(STORAGE_KEYS.inscriptions)
-    }).then(
-        l => {
-            inscriptions = l;
+    const newUser = jours.map(jour => (
+        {id: genererId(),
+        nom: nom,
+        personnage: personnage,
+        jour: jour.value}))
+
+    Promise.all(newUser.map(u => {
+        return addData(u, STORAGE_KEYS.inscriptions)
+    })).then(
+        () => {
+            inscriptions.push(...newUser);
             document.getElementById("nom").value = "";
             document.getElementById("personnage").value = "";
             jours.forEach(j => j.checked = false);
@@ -172,7 +171,7 @@ if (tbody) {
         if (inscription) {
             // inscriptions.splice(index, 1);
             await deleteData(inscription, STORAGE_KEYS.inscriptions);
-            inscriptions = await loadData(STORAGE_KEYS.inscriptions);
+            inscriptions = inscriptions.filter(i => i.id !== inscription.id);
             appliquerRecherche();
         }
     });
@@ -222,14 +221,16 @@ async function creerGroupe() {
         return;
     }
 
-    await addData({
+    const newGroupe = {
         id: genererId(),
         nom: nom,
         membres: membres,
         jours: joursChoisis
-    }, STORAGE_KEYS.groupes);
+    };
 
-    groupes = await loadData(STORAGE_KEYS.groupes);
+    await addData(newGroupe, STORAGE_KEYS.groupes);
+
+    groupes.push(newGroupe);
 
     document.getElementById("nomGroupe").value = "";
     checksParticipants.forEach(checkbox => checkbox.checked = false);
@@ -286,7 +287,7 @@ if (zoneGroupes) {
         if (window.confirm(message)) {
             // groupes.splice(index, 1);
             await deleteData(groupe, STORAGE_KEYS.groupes);
-            groupes = await loadData(STORAGE_KEYS.groupes);
+            groupes = groupes.filter(g => g.id !== groupe.id);
             afficherGroupes();
             afficherJour("Tous");
         }
