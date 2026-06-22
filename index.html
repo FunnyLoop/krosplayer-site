@@ -1,23 +1,175 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Compteur</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Inscriptions-AC</title>
+    <script src="js/script.js" defer></script>
+    <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
-<div class="container">
-    <h1>Mon Compteur</h1>
 
-    <p>Compteur : <span id="counter">0</span></p>
+    <header class="banner">
+        <img src="images/unnamed6.png" alt="Bannière">
+    </header>
 
-    <div class="buttons">
-        <button id="addBtn">Ajouter</button>
-        <button id="helloBtn">sendHello</button>
-    </div>
-</div>
+    <main class="container">
 
-<script src="script.js"></script>
+        <h1>Inscriptions</h1>
+
+        <section class="formulaire">
+
+            <input type="text" id="nom" placeholder="Nom">
+
+            <input type="text" id="personnage" placeholder="Personnage">
+
+            <div class="jours">
+
+                <label>
+                    <input type="checkbox" value="Jeudi">
+                    Jeudi
+                </label>
+
+                <label>
+                    <input type="checkbox" value="Vendredi">
+                    Vendredi
+                </label>
+
+                <label>
+                    <input type="checkbox" value="Samedi">
+                    Samedi
+                </label>
+
+                <label>
+                    <input type="checkbox" value="Dimanche">
+                    Dimanche
+                </label>
+
+            </div>
+
+            <button onclick="ajouterInscription()">
+                Valider
+            </button>
+
+        </section>
+
+        <section class="filtres">
+
+            <button onclick="afficherJour('Tous')">
+                Tableau complet
+            </button>
+
+            <button onclick="afficherJour('Jeudi')">
+                Jeudi
+            </button>
+
+            <button onclick="afficherJour('Vendredi')">
+                Vendredi
+            </button>
+
+            <button onclick="afficherJour('Samedi')">
+                Samedi
+            </button>
+
+            <button onclick="afficherJour('Dimanche')">
+                Dimanche
+            </button>
+        </section>
+
+        <section class="tableau">
+
+            <div class="recherche">
+                <input
+                    type="text"
+                    id="recherchePerso"
+                    placeholder="Rechercher un personnage..."
+                >
+                <button id="btnRecherche" type="button">
+                    Valider
+                </button>
+            </div>
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Personnage</th>
+                        <th>Jour</th>
+                        <th>✖</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tableBody">
+                </tbody>
+
+            </table>
+
+        </section>
+
+        <section class="groupe-cosplay">
+            <h2>Groupe cosplay</h2>
+
+            <div class="groupe-form">
+                <div class="groupe-field">
+                    <label for="nomGroupe">Nom du groupe</label>
+                    <input
+                        type="text"
+                        id="nomGroupe"
+                        placeholder="Nom du groupe"
+                    >
+                </div>
+
+                <div class="groupe-field groupe-field--checkboxes">
+                    <button type="button" class="btn-select" id="btnParticipants">
+                        Participants
+                    </button>
+                    <div id="participantsCheckboxes" class="checkbox-list hidden">
+                    </div>
+                </div>
+
+                <div class="groupe-field groupe-field--checkboxes">
+                    <button type="button" class="btn-select" id="btnJours">
+                        Jours
+                    </button>
+                    <div id="joursGroupeCheckboxes" class="checkbox-list checkbox-list--small hidden">
+                        <label><input type="checkbox" value="Jeudi"> Jeudi</label>
+                        <label><input type="checkbox" value="Vendredi"> Vendredi</label>
+                        <label><input type="checkbox" value="Samedi"> Samedi</label>
+                        <label><input type="checkbox" value="Dimanche"> Dimanche</label>
+                    </div>
+                </div>
+
+                <button type="button" onclick="creerGroupe()">
+                    Valider groupe
+                </button>
+            </div>
+
+            <div id="listeGroupes" class="liste-groupes"></div>
+        </section>
+
+        <div class="funny">
+            <P>Vous voulez une super pancarte avec vos infos pour qu'on puisse vous retrouver facilement après ?
+            <br>
+            N'hésitez pas à contacter @funny-loop sur Discord. </P> 
+        </div>
+
+    </main>
+
+    <footer class="footer">
+        <h3>Contact</h3>
+        <div class="footer-icons">
+            <a href="https://www.instagram.com/krosplayers?igsh=MXVqanJrM2xneTM2Zw==" target="_blank" rel="noopener noreferrer">
+                <img src="images/Instagram_icon.png" alt="Instagram">
+            </a>
+            <a href="https://discord.gg/tuDRzGJV" target="_blank" rel="noopener noreferrer">
+                <img src="images/Discord_Logo_sans_texte.svg.png" alt="Discord">
+            </a>
+        </div>
+    </footer>
+
 </body>
-</html>
+
+</html> 
